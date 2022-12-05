@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 import uuid
 from datetime import datetime
+from django.utils import timezone
 
 User = get_user_model()
 # Create your models hereself.
@@ -26,7 +27,7 @@ class Post(models.Model):
     user = models.CharField(max_length=100)
     image = models.ImageField(upload_to="post_images")
     caption = models.TextField()
-    created_at = models.DateTimeField(default=datetime.now)
+    created_at = models.DateTimeField(default=timezone.now)
     no_of_likes = models.IntegerField(default=0)
 
     def __str__(self):
@@ -40,6 +41,18 @@ class LikePost(models.Model):
     def __str__(self):
 
         return self.username
+
+
+class CommentPost(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    post_id = models.UUIDField(null=True)
+    user = models.CharField(max_length=100)
+    content = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+
+        return self.user
 
 
 class FollowersCount(models.Model):

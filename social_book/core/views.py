@@ -4,9 +4,10 @@ from django.contrib.auth import authenticate
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Post, LikePost, FollowersCount
+from .models import Profile, Post, LikePost, FollowersCount, CommentPost
 from itertools import chain
 from django.http import JsonResponse
+from django.urls import reverse
 import random
 
 # Create your views here.
@@ -21,9 +22,7 @@ def index(request):
     user_following_list = []
     feed = []
 
-    user_following = FollowersCount.objects.filter(
-        follower=request.user.username
-    )
+    user_following = FollowersCount.objects.filter(follower=request.user.username)
 
     for users in user_following:
         user_following_list.append(users.user)
@@ -34,7 +33,7 @@ def index(request):
     #
     # feed_list = list(chain(*feed))
     feed_list = Post.objects.all()
-    print(feed_list)
+    # print(feed_list)
 
     # user suggestion starts
     all_users = User.objects.all()
@@ -70,9 +69,7 @@ def index(request):
         {
             "user_profile": user_profile,
             "posts": feed_list,
-            "suggestions_username_profile_list": suggestions_username_profile_list[
-                :4
-            ],
+            "suggestions_username_profile_list": suggestions_username_profile_list[:4],
         },
     )
 
@@ -90,7 +87,36 @@ def upload(request):
 
         return redirect("/")
     else:
+
         return redirect("/")
+
+
+@login_required(login_url="signin")
+def post(request, pk):
+    user_profile = Profile.objects.get(user=request.user)
+    if request.method == "GET":
+        post = Post.objects.get(id=pk)
+        comments = CommentPost.objects.filter(post_id=pk)
+
+        return render(
+            request,
+            "post.html",
+            {"post": post, "user_profile": user_profile, "comments": comments},
+        )
+
+
+@login_required(login_url="signin")
+def comment(request, pk):
+    # user_profile = Profile.objects.get(user=request.user)
+    print("GiangNguyen")
+    if request.method == "POST":
+        # post = Post.objects.get(id=pk)
+        user = request.user.username
+        content = request.POST["content"]
+        comment = CommentPost.objects.create(post_id=pk, user=user, content=content)
+        print(comment)
+        return redirect(reverse("post", kwargs={"pk": pk}))
+        # return redirect("index")
 
 
 @login_required(login_url="signin")
@@ -130,9 +156,7 @@ def like_post(request):
 
     post = Post.objects.get(id=post_id)
 
-    like_filter = LikePost.objects.filter(
-        post_id=post_id, username=username
-    ).first()
+    like_filter = LikePost.objects.filter(post_id=post_id, username=username).first()
 
     if like_filter is None:
         new_like = LikePost.objects.create(post_id=post_id, username=username)
@@ -187,15 +211,11 @@ def follow(request):
         user = request.POST["user"]
 
         if FollowersCount.objects.filter(follower=follower, user=user).first():
-            delete_follower = FollowersCount.objects.get(
-                follower=follower, user=user
-            )
+            delete_follower = FollowersCount.objects.get(follower=follower, user=user)
             delete_follower.delete()
             return redirect("/profile/" + user)
         else:
-            new_follower = FollowersCount.objects.create(
-                follower=follower, user=user
-            )
+            new_follower = FollowersCount.objects.create(follower=follower, user=user)
             new_follower.save()
             return redirect("/profile/" + user)
     else:
@@ -227,8 +247,10 @@ def settings(request):
             user_profile.location = location
             user_profile.save()
 
-        return redirect("/profile/{}".format(user_profile.user))
-    return render(request, "setting.html", {"user_profile": user_profile})
+        # return redirect("/profile/{}".format(user_profile.user))
+        return redirect(reverse("profile", kwargs={"pk": user_profile.user}))
+    else:
+        return render(request, "setting.html", {"user_profile": user_profile})
 
 
 def signup(request):
@@ -253,9 +275,7 @@ def signup(request):
                 user.save()
 
                 # log user in and redirect to settings page
-                user_login = auth.authenticate(
-                    username=username, password=password
-                )
+                user_login = auth.authenticate(username=username, password=password)
                 auth.login(request, user_login)
 
                 # create a Profile object for the new user
@@ -264,7 +284,7 @@ def signup(request):
                     user=user_model, id_user=user_model.id
                 )
                 new_profile.save()
-                return redirect("settings")
+                return redirect("/")
         else:
             messages.info(request, "Password Not Matching")
             return redirect("signup")
@@ -288,7 +308,6 @@ def signin(request):
             return redirect("signin")
 
     else:
-        print(request.user.__dict__)
         return render(request, "signin.html")
 
 

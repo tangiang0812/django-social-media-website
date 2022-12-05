@@ -29,8 +29,8 @@
               SockToy
             </a>
             <div class="d-none d-md-block">
-              <button type="button" class="btn btn-outline-secondary shadow">Signup</button>
-              <button type="button" class="btn btn-outline-secondary shadow">Login</button>
+              <a role="button" class="btn btn-outline-secondary shadow" href="/signup">Signup</a>
+              <a role="button" class="btn btn-outline-secondary shadow" href="/signin">Login</a>
             </div>
           </div>
         </div>
@@ -40,6 +40,15 @@
         <div class="col-6 offset-3">
           <div class="card rounded shadow p-3">
             <div class="card-body">
+              {% for message  in messages %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <strong>{{ message }}!</strong>
+                  <button type="button"
+                          class="btn-close"
+                          data-bs-dismiss="alert"
+                          aria-label="Close"></button>
+                </div>
+              {% endfor %}
               <form action="" method="POST" novalidate class="needs-validation">
                 {% csrf_token %}
                 <div class="input-group mb-3">
@@ -54,7 +63,7 @@
                 </div>
                 <div class="input-group mb-3">
                   <div class="form-floating">
-                    <input type="text"
+                    <input type="password"
                            class="form-control"
                            name="password"
                            id="floatingInputGroup1"
