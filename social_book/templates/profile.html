@@ -173,37 +173,49 @@
             </div>
           </div>
           <div class="col-md-5 px-4">
+            {% for message  in messages %}
+              <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>{{ message }}!</strong>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close">
+                </button>
+              </div>
+            {% endfor %}
             <!--- \\\\\\\Post-->
-            <!-- {% if user_object.username == user.username %} -->
-            <!--   <div class="card mb-3 rounded shadow"> -->
-            <!--     <div class="card-body"> -->
-            <!--       <form action="/upload" method="POST" enctype="multipart/form-data"> -->
-            <!--         {% csrf_token %} -->
-            <!--         <div class="input-group mb-3"> -->
-            <!--           <label class="input-group-text" for="image_upload">Upload</label> -->
-            <!--           <input type="file" -->
-            <!--                  name="image_upload" -->
-            <!--                  class="form-control" -->
-            <!--                  id="image_upload"> -->
-            <!--         </div> -->
-            <!--         <div class="mb-3"> -->
-            <!--           <textarea class="form-control" -->
-            <!--                     id="caption" -->
-            <!--                     name="caption" -->
-            <!--                     rows="3" -->
-            <!--                     placeholder="What are you thinking?"></textarea> -->
-            <!--         </div> -->
-            <!--         <div class="btn-toolbar mt-2 justify-content-between"> -->
-            <!--           <div class="btn-group"> -->
-            <!--             <button type="submit" class="btn btn-primary"> -->
-            <!--               Post -->
-            <!--             </button> -->
-            <!--           </div> -->
-            <!--         </div> -->
-            <!--       </form> -->
-            <!--     </div> -->
-            <!--   </div> -->
-            <!-- {% endif %} -->
+            {% if target_user_object.username == user.username %}
+              <div class="card mb-3 rounded shadow">
+                <div class="card-body">
+                  <form action="/upload" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                      <label class="input-group-text" for="image_upload">
+                        Upload
+                      </label>
+                      <input type="file"
+                             name="image_upload"
+                             class="form-control"
+                             id="image_upload">
+                    </div>
+                    <div class="mb-3">
+                      <textarea class="form-control"
+                                id="caption"
+                                name="caption"
+                                rows="3"
+                                placeholder="What are you thinking?"></textarea>
+                    </div>
+                    <div class="btn-toolbar mt-2 justify-content-between">
+                      <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">
+                          Post
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            {% endif %}
             <!--- \\\\\\\Post-->
             {% for post in user_posts reversed %}
               <div class="card mb-3 rounded shadow">
@@ -240,8 +252,12 @@
                           <div class="h6 dropdown-header">
                             Configuration
                           </div>
-                          <a class="dropdown-item" href="#">Save</a>
-                          <a class="dropdown-item" href="#">Hide</a>
+                          <form action="/post/{{ post.id }}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">
+                              Delete
+                            </button>
+                          </form>
                           <a class="dropdown-item" href="#">Report</a>
                         </div>
                       </div>
@@ -269,7 +285,7 @@
                     <div class="">
                       <a href="/like-post?post_id={{ post.id }}"><i class="fa-regular fa-thumbs-up"></i> Like</a>
                     </div>
-                    <a href="#"><i class="fa fa-comment"></i> Comment</a>
+                    <a href="/post/{{ post.id }}"><i class="fa fa-comment"></i> Comment</a>
                     <a href="#"><i class="fa fa-mail-forward"></i> Share</a>
                   </div>
                   {% if post.no_of_likes == 0 %}

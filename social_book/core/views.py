@@ -9,13 +9,13 @@ from itertools import chain
 from django.http import JsonResponse
 from django.urls import reverse
 import random
+from urllib.parse import urlparse
 
 # Create your views here.
 
 
 @login_required(login_url="signin")
 def index(request):
-
     user_object = User.objects.get(username=request.user.username)
     user_profile = Profile.objects.get(user=user_object)
 
@@ -77,6 +77,8 @@ def index(request):
 @login_required(login_url="signin")
 def upload(request):
 
+    referer = request.META.get("HTTP_REFERER")
+    path = urlparse(referer).path
     if request.method == "POST":
         user = request.user.username
         image = request.FILES.get("image_upload")
@@ -84,8 +86,11 @@ def upload(request):
 
         new_post = Post.objects.create(user=user, image=image, caption=caption)
         new_post.save()
-
-        return redirect("/")
+        messages.info(request, "Post Uploaded")
+        if path.startswith("/profile"):
+            return redirect(reverse("profile", kwargs={"pk": user}))
+        else:
+            return redirect("/")
     else:
 
         return redirect("/")
@@ -94,6 +99,20 @@ def upload(request):
 @login_required(login_url="signin")
 def post(request, pk):
     user_profile = Profile.objects.get(user=request.user)
+    referer = request.META.get("HTTP_REFERER")
+    path = urlparse(referer).path
+    print(path)
+    if request.method == "POST":
+        post = Post.objects.get(id=pk)
+        if post.user == request.user.username:
+            CommentPost.objects.filter(post_id=pk).delete()
+            post.delete()
+            messages.info(request, "Post Deleted")
+        if path.startswith("/profile"):
+            return redirect(reverse("profile", kwargs={"pk": user_profile.user}))
+        else:
+            return redirect("/")
+
     if request.method == "GET":
         post = Post.objects.get(id=pk)
         comments = CommentPost.objects.filter(post_id=pk)
@@ -108,7 +127,6 @@ def post(request, pk):
 @login_required(login_url="signin")
 def comment(request, pk):
     # user_profile = Profile.objects.get(user=request.user)
-    print("GiangNguyen")
     if request.method == "POST":
         # post = Post.objects.get(id=pk)
         user = request.user.username
@@ -154,6 +172,8 @@ def like_post(request):
     username = request.user.username
     post_id = request.GET.get("post_id")
 
+    referer = request.META.get("HTTP_REFERER")
+    path = urlparse(referer).path
     post = Post.objects.get(id=post_id)
 
     like_filter = LikePost.objects.filter(post_id=post_id, username=username).first()
@@ -163,11 +183,18 @@ def like_post(request):
         new_like.save()
         post.no_of_likes = post.no_of_likes + 1
         post.save()
-        return redirect("/")
+        # return redirect("/")
     else:
         like_filter.delete()
         post.no_of_likes = post.no_of_likes - 1
         post.save()
+        # return redirect("/")
+
+    if path.startswith("/profile"):
+        return redirect(reverse("profile", kwargs={"pk": username}))
+    elif path.startswith("/post"):
+        return redirect(reverse("post", kwargs={"pk": post_id}))
+    else:
         return redirect("/")
 
 
@@ -248,6 +275,7 @@ def settings(request):
             user_profile.save()
 
         # return redirect("/profile/{}".format(user_profile.user))
+        messages.info(request, "Change Applied")
         return redirect(reverse("profile", kwargs={"pk": user_profile.user}))
     else:
         return render(request, "setting.html", {"user_profile": user_profile})
@@ -262,6 +290,15 @@ def signup(request):
         password2 = request.POST["password2"]
 
         if password == password2:
+            if not username:
+                messages.info(request, "Empty Username")
+                return redirect("signup")
+            if not email:
+                messages.info(request, "Empty Email")
+                return redirect("signup")
+            if not password:
+                messages.info(request, "Empty Password")
+                return redirect("signup")
             if User.objects.filter(email=email).exists():
                 messages.info(request, "Email Taken")
                 return redirect("signup")
@@ -284,6 +321,10 @@ def signup(request):
                     user=user_model, id_user=user_model.id
                 )
                 new_profile.save()
+                messages.info(
+                    request,
+                    "We are delighted to have you among us.  {}".format(username),
+                )
                 return redirect("/")
         else:
             messages.info(request, "Password Not Matching")
@@ -302,6 +343,7 @@ def signin(request):
 
         if user is not None:
             auth.login(request, user)
+            messages.info(request, "Welcome Back {}".format(username))
             return redirect("/")
         else:
             messages.info(request, "Credentials Invalid")

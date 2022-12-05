@@ -114,10 +114,10 @@
           <!--         </ul> -->
           <!--     </div> -->
           <!-- </div> -->
-          <div class="col-md-5 offset-md-2 px-4">
+          <div class="col-md-6 col-lg-6 col-xl-5 offset-xl-2 px-4">
             <!--- \\\\\\\Post-->
             {% for message  in messages %}
-              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <div class="alert alert-success alert-dismissible fade show" role="alert">
                 <strong>{{ message }}!</strong>
                 <button type="button"
                         class="btn-close"
@@ -202,8 +202,14 @@
                         <div class="dropdown-menu dropdown-menu-right"
                              aria-labelledby="gedf-drop1">
                           <div class="h6 dropdown-header">Configuration</div>
-                          <a class="dropdown-item" href="#">Save</a>
-                          <a class="dropdown-item" href="#">Hide</a>
+                          {% if post.user == user.username %}
+                            <form action="/post/{{ post.id }}" method="post">
+                              {% csrf_token %}
+                              <button type="submit" class="dropdown-item">Delete</button>
+                            </form>
+                          {% else %}
+                            <a class="dropdown-item" href="#">Hide</a>
+                          {% endif %}
                           <a class="dropdown-item" href="#">Report</a>
                         </div>
                       </div>
